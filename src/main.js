@@ -1,24 +1,15 @@
 const express = require("express");
-
 const app = express();
 
-// Rota principal
-app.get("/", function (request, response) {
-  return response.send("API Funcionando...");
-});
+// Importação do arquivos de configuração de rotas
+const baseRouter = require("./routes/base");
+const contatoRouter = require("./routes/contato");
 
-app.get("/Autor", function (request, response) {
-  return response.send("Autor: Katielly");
-});
+app.use(express.json());
 
-app.get("/sobre", function (repost, response) {
-  const info = {
-    nome: "Katielly Bordin Santos",
-    email: "katielly@gmail.com",
-    telefone: "(69) 99999-9999",
-  };
-  return response.json(info);
-});
+//Configuração de uso das rotas
+app.use(baseRouter);
+app.use(contatoRouter);
 
 // Iniciando a aplicação na porta 3000
 app.listen(3000, function () {
