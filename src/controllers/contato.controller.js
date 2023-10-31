@@ -30,17 +30,94 @@ const listaContatos = [
   },
 ];
 
-//funcção list
+/*
+function ValidarInformacoesContato(contato) {
+  const { nome, dataNascimento, telefone, email } = contato;
+}*/
+
+//function list
 function list(request, response) {
   return response.json({ dados: listaContatos });
 }
 
-//funcção create
+//function create
 function create(request, response) {
   const nome = request.body.nome;
   const data = request.body.data;
   const telefone = request.body.telefone;
   const email = request.body.email;
+
+  // Verifica se todos os campos obrigatórios estão presentes
+  if (!nome || !data || !telefone || !email) {
+    return response
+      .status(400)
+      .json({ error: "Todos os campos são obrigatórios." });
+  }
+
+  function ValidarNome(nome) {
+    if (nome.length <= 5) {
+      return response.json({
+        error: "Nome precisa ter no mínimo 5 caracteres.",
+      });
+    }
+  }
+
+  function ValidarData(data) {
+    const dataValidar = /^\d{4}-\d{2}-\d{2}$/;
+    if (!data.match(dataValidar)) {
+      return {
+        error: "Data Inválida.",
+      };
+    }
+
+    const partesDaData = data.split("-");
+    const ano = parseInt(partesDaData[0]);
+    const mes = parseInt(partesDaData[1]);
+    const dia = parseInt(partesDaData[2]);
+
+    if (
+      ano < 1 ||
+      ano > 9999 ||
+      mes < 1 ||
+      mes > 12 ||
+      dia < 1 ||
+      dia > 31 ||
+      (mes === 2 && dia > 29)
+    ) {
+      return {
+        error: "Data Inválida.",
+      };
+    }
+
+    return {
+      success: "Data Válida.",
+    };
+  }
+
+  function ValidarTelefone(telefone) {
+    const telefoneValidar = /^\d[0-9]+$/;
+    if (!telefone.match(telefoneValidar)) {
+      return response.json({
+        error: "Telefone deve conter somente numeros.",
+      });
+    }
+  }
+
+  function ValidarEmail(email) {
+    const emailValidar =
+      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    if (!email.match(emailValidar)) {
+      return response.json({
+        error: "Email Inválido.",
+      });
+    }
+  }
+
+  // Valida os campos
+  ValidarNome(nome);
+  ValidarData(data);
+  ValidarTelefone(telefone);
+  ValidarEmail(email);
 
   const quantidade = listaContatos.length;
 
