@@ -1,4 +1,7 @@
-// Dados da lista de contatos
+const Validator = require("validatorjs");
+const connection = require("../configs/mysql.config");
+
+/* Dados da lista de contatos
 const listaContatos = [
   {
     codigo: 1,
@@ -28,162 +31,184 @@ const listaContatos = [
     telefone: "(437) 598-0259",
     email: "nunc.sed@google.ca",
   },
-];
+]; */
 
-/*
-function ValidarInformacoesContato(contato) {
-  const { nome, dataNascimento, telefone, email } = contato;
-}*/
+// Função que deve receber um identificador (código) e retornar o contato correspondente
+function show(req, res) {
+  const codigo = req.params.codigo;
+
+  if (codigo == undefined) {
+    return res.json({ erro: "Ocorreram erros ao buscar a informação" });
+  }
+
+  connection.query(
+    "SELECT * FROM contatos WHERE id = ?",
+    [codigo],
+    function (err, resultado) {
+      if (err) {
+        return res.json({
+          erro: "Ocorreram erros ao tentar salvar a informação",
+        });
+      }
+
+      if (resultado.length == 0) {
+        return res.json({ erro: `O código #${codigo} não foi encontrado!` });
+      }
+
+      return res.json(resultado[0]);
+    }
+  );
+}
 
 //function list
 function list(request, response) {
-  return response.json({ dados: listaContatos });
+  connection.query("SELECT * FROM contatos", function (err, resultado) {
+    if (err) {
+      return response.json({ erro: "Ocorreram erros ao buscar os dados" });
+    }
+    return response.json({ dados: resultado });
+  });
 }
 
 //function create
 function create(request, response) {
-  const nome = request.body.nome;
-  const data = request.body.data;
-  const telefone = request.body.telefone;
-  const email = request.body.email;
-
-  // Verifica se todos os campos obrigatórios estão presentes
-  if (!nome || !data || !telefone || !email) {
-    return response
-      .status(400)
-      .json({ error: "Todos os campos são obrigatórios." });
-  }
-
-  function ValidarNome(nome) {
-    if (nome.length <= 5) {
-      return response.json({
-        error: "Nome precisa ter no mínimo 5 caracteres.",
-      });
-    }
-  }
-
-  function ValidarData(data) {
-    const dataValidar = /^\d{4}-\d{2}-\d{2}$/;
-    if (!data.match(dataValidar)) {
-      return {
-        error: "Data Inválida.",
-      };
-    }
-
-    const partesDaData = data.split("-");
-    const ano = parseInt(partesDaData[0]);
-    const mes = parseInt(partesDaData[1]);
-    const dia = parseInt(partesDaData[2]);
-
-    if (
-      ano < 1 ||
-      ano > 9999 ||
-      mes < 1 ||
-      mes > 12 ||
-      dia < 1 ||
-      dia > 31 ||
-      (mes === 2 && dia > 29)
-    ) {
-      return {
-        error: "Data Inválida.",
-      };
-    }
-
-    return {
-      success: "Data Válida.",
-    };
-  }
-
-  function ValidarTelefone(telefone) {
-    const telefoneValidar = /^\d[0-9]+$/;
-    if (!telefone.match(telefoneValidar)) {
-      return response.json({
-        error: "Telefone deve conter somente numeros.",
-      });
-    }
-  }
-
-  function ValidarEmail(email) {
-    const emailValidar =
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    if (!email.match(emailValidar)) {
-      return response.json({
-        error: "Email Inválido.",
-      });
-    }
-  }
-
-  // Valida os campos
-  ValidarNome(nome);
-  ValidarData(data);
-  ValidarTelefone(telefone);
-  ValidarEmail(email);
-
-  const quantidade = listaContatos.length;
-
-  const novoContato = {
-    codigo: quantidade + 1,
-    nome: nome,
-    data: data,
-    telefone: telefone,
-    email: email,
+  const regras = {
+    nome: "required|min:5",
+    data_nasc: "required|date",
+    telefone: "required",
+    email: "required|email",
   };
 
-  listaContatos.push(novoContato);
+  const validacao = new Validator(request.body, regras);
 
-  return response.json(novoContato);
+  if (validacao.fails()) {
+    return response.json(validacao.errors);
+  }
+
+  const { nome, data, telefone, email } = request.body;
+
+  connection.query(
+    "INSERT INTO contatos (nome, data_nasc, telefone, email) VALUES (?, ?, ?, ?)",
+    [nome, data, telefone, email],
+    function (err, resultado) {
+      if (err) {
+        return response.json({
+          erro: "Ocorreram erros ao tentar salvar a informação",
+        });
+      }
+
+      if (resultado.affectedRows == 0) {
+        return response.json({
+          erro: `Ocorreram erros ao tentar salvar a informação`,
+        });
+      }
+
+      return response.json({
+        nome,
+        data,
+        telefone,
+        email,
+        id: resultado.insertId,
+      });
+    }
+  );
 }
 
 //function update
 function update(request, response) {
   const codigo = request.params.codigo;
 
-  let contato = null;
+  const regras = {
+    nome: "required|min:5",
+    data_nasc: "required|date",
+    telefone: "required",
+    email: "required|email",
+  };
 
-  for (const _contato of listaContatos) {
-    if (_contato.codigo == codigo) {
-      contato = _contato;
-    }
+  const validacao = new Validator(request.body, regras);
+
+  if (validacao.fails()) {
+    return response.json(validacao.errors);
   }
 
-  if (contato == undefined) {
-    return response.json({ erro: `Contato #${codigo} não foi encontrado.` });
-  }
 
+  //buscar o dado no bd
+  connection.query(
+    "SELECT * FROM contatos WHERE id = ?",[codigo], function(err, resultado) {
+      if (err) {
+        return response.json({ erro: "Ocorreram erros ao buscar os dados"
+       });
+      }
+
+        if (resultado.length === 0) {
+          return response.json({
+            erro: `não foi possivel encontrar o contato`,
+          });
+        }
+        const contato = resultado[0]; 
+        
   const nome = request.body.nome;
   const data = request.body.data;
   const telefone = request.body.telefone;
   const email = request.body.email;
 
-  contato.nome = nome;
-  contato.data = data;
-  contato.telefone = telefone;
-  contato.email = email;
+  connection.query(
+    "UPDATE contatos SET nome = ?, data_nasc = ?, telefone = ?, email = ? WHERE id = ?",
+    [nome, data, telefone, email, codigo],
+    function (err, resultado) {
+      if (err) {
+        return response.json({
+          erro: "Ocorreu um erro ao tentar atualizar o contato",
+        });
+      }
 
-  return response.json(contato);
+      if (resultado.affectedRows === 0) {
+        return response.json({
+          erro: "Nenhum contato foi atualizado",
+        });
+      }
+      return response.json({
+        nome,
+        data,
+        telefone,
+        email,
+        id: resultado.insertId,
+      });
+    }
+  );
+}
+);
 }
 
 //function destroy
 function destroy(request, response) {
   const codigo = request.params.codigo;
 
-  let contato = null;
+  connection.query(
+    "DELETE FROM contatos WHERE id= ?",
+    [codigo],
+    function (err, resultado) {
+      if (err) {
+        return response.json({
+          erro: "Ocorreu um erro ao tentar excluir o contato",
+        });
+      }
 
-  for (const [indice, _contato] of listaContatos.entries()) {
-    if (_contato.codigo == codigo) {
-      contato = _contato;
-      // Remove através do índice da lista
-      listaContatos.splice(indice, 1);
-      break;
+      if (resultado.affectedRows === 0) {
+        return response.json({
+          erro: `Contato #${codigo} não foi encontrado`,
+        });
+      }
+
+      return response.json({
+        mensagem: `Contato ${codigo} foi deletado com sucesso`,
+        
+      });
+      
     }
-  }
-
-  if (contato == null) {
-    return response.json({ erro: `Contato #${codigo} não foi encontrado` });
-  }
-
-  return response.json(contato);
+  );
 }
 
+
 // Module exports sempre no final do arquivo
-module.exports = { list, create, update, destroy };
+module.exports = { show, list, create, update, destroy };
