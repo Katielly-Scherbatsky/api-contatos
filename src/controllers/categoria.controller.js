@@ -32,7 +32,7 @@ function show(req, res) {
 }
 
 function list(request, response) {
-  connection.query("SELECT * FROM categorias", function (err, resultado) {
+  connection.query("SELECT * FROM categoria", function (err, resultado) {
     if (err) {
       return response.json({ erro: "Ocorreram erros ao buscar os dados" });
     }

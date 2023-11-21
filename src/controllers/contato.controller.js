@@ -85,7 +85,10 @@ function create(request, response) {
     return response.json(validacao.errors);
   }
 
-  const { nome, data, telefone, email } = request.body;
+  const nome = request.body.nome;
+  const data = request.body.data_nasc;
+  const telefone = request.body.telefone;
+  const email = request.body.email;
 
   connection.query(
     "INSERT INTO contatos (nome, data_nasc, telefone, email) VALUES (?, ?, ?, ?)",
@@ -131,53 +134,53 @@ function update(request, response) {
     return response.json(validacao.errors);
   }
 
-
   //buscar o dado no bd
   connection.query(
-    "SELECT * FROM contatos WHERE id = ?",[codigo], function(err, resultado) {
-      if (err) {
-        return response.json({ erro: "Ocorreram erros ao buscar os dados"
-       });
-      }
-
-        if (resultado.length === 0) {
-          return response.json({
-            erro: `não foi possivel encontrar o contato`,
-          });
-        }
-        const contato = resultado[0]; 
-        
-  const nome = request.body.nome;
-  const data = request.body.data;
-  const telefone = request.body.telefone;
-  const email = request.body.email;
-
-  connection.query(
-    "UPDATE contatos SET nome = ?, data_nasc = ?, telefone = ?, email = ? WHERE id = ?",
-    [nome, data, telefone, email, codigo],
+    "SELECT * FROM contatos WHERE id = ?",
+    [codigo],
     function (err, resultado) {
       if (err) {
-        return response.json({
-          erro: "Ocorreu um erro ao tentar atualizar o contato",
-        });
+        return response.json({ erro: "Ocorreram erros ao buscar os dados" });
       }
 
-      if (resultado.affectedRows === 0) {
+      if (resultado.length === 0) {
         return response.json({
-          erro: "Nenhum contato foi atualizado",
+          erro: `não foi possivel encontrar o contato`,
         });
       }
-      return response.json({
-        nome,
-        data,
-        telefone,
-        email,
-        id: resultado.insertId,
-      });
+      const contato = resultado[0];
+
+      const nome = request.body.nome;
+      const data = request.body.data_nasc;
+      const telefone = request.body.telefone;
+      const email = request.body.email;
+
+      connection.query(
+        "UPDATE contatos SET nome = ?, data_nasc = ?, telefone = ?, email = ? WHERE id = ?",
+        [nome, data, telefone, email, codigo],
+        function (err, resultado) {
+          if (err) {
+            return response.json({
+              erro: "Ocorreu um erro ao tentar atualizar o contato",
+            });
+          }
+
+          if (resultado.affectedRows === 0) {
+            return response.json({
+              erro: "Nenhum contato foi atualizado",
+            });
+          }
+          return response.json({
+            nome,
+            data,
+            telefone,
+            email,
+            id: resultado.insertId,
+          });
+        }
+      );
     }
   );
-}
-);
 }
 
 //function destroy
@@ -202,13 +205,10 @@ function destroy(request, response) {
 
       return response.json({
         mensagem: `Contato ${codigo} foi deletado com sucesso`,
-        
       });
-      
     }
   );
 }
-
 
 // Module exports sempre no final do arquivo
 module.exports = { show, list, create, update, destroy };

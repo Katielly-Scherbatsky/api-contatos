@@ -5,15 +5,11 @@ const router = express.Router();
 const contatoController = require("../controllers/contato.controller");
 
 // Configuração de rotas
-
-// Mostrar um contato
-router.post("/contatos", contatoController.show);
+// Mostrar contato pelo ID
+router.get("/contatos/:codigo", contatoController.show);
 
 // Criar um novo contato
 router.post("/contatos", contatoController.create);
-
-// Mostrar contato pelo ID
-router.get("/contatos", contatoController.show);
 
 // Listar todos os contatos
 router.get("/contatos", contatoController.list);
