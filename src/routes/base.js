@@ -13,7 +13,7 @@ router.get("/Autor", function (request, response) {
 
 router.get("/sobre", function (repost, response) {
   const info = {
-    nome: "Katielly Bordin Santos",
+    sobre: "Katielly Bordin Santos",
     email: "katielly@gmail.com",
     telefone: "(69) 99999-9999",
   };
